@@ -40,7 +40,7 @@ const API_ROUTES: ApiRouteOption[] = [
   {
     id: 'physics',
     name: 'مسار فيزياء السادس',
-    endpoint: '/api/vision/physics',
+    endpoint: 'https://hhh-two-black.vercel.app/api/ocr',
     subject: 'الفيزياء',
     description: 'مخصص لدوائر التيار المتناوب RLC، المحثات، المتسعات، والرسومات الهندسية الحثية والمغناطيسية.',
     badge: 'RLC & Induction',
@@ -49,7 +49,7 @@ const API_ROUTES: ApiRouteOption[] = [
   {
     id: 'chemistry',
     name: 'مسار كيمياء السادس',
-    endpoint: '/api/vision/chemistry',
+    endpoint: 'https://hhh-main-wheat.vercel.app/api/ocr',
     subject: 'الكيمياء',
     description: 'مخصص لمخططات طاقة التفاعلات، الخلايا الكلفانية والإلكتروليتية، ومسائل الاتزان وبفر.',
     badge: 'Electro & Buffer',
@@ -58,7 +58,7 @@ const API_ROUTES: ApiRouteOption[] = [
   {
     id: 'math',
     name: 'مسار رياضيات السادس',
-    endpoint: '/api/vision/math',
+    endpoint: 'https://superb-centaur-deea8c.netlify.app/api/friend-ocr',
     subject: 'الرياضيات',
     description: 'مخصص لمنحنيات الدوال، نقاط الانقلاب، والتكامل المحدد وحساب المساحات المظللة.',
     badge: 'Curves & Calculus',
@@ -67,7 +67,7 @@ const API_ROUTES: ApiRouteOption[] = [
   {
     id: 'general',
     name: 'المسار الشامل الذاتي',
-    endpoint: '/api/vision/general',
+    endpoint: 'https://starlit-duckanoo-496fde.netlify.app/api/mmm-friend-ocr',
     subject: 'عام',
     description: 'كشف وتحليل وتصنيف تلقائي للمسألة والرسم لأي مادة علمية وفق معايير الامتحان الوزاري.',
     badge: 'Universal AI',
@@ -586,7 +586,7 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
     });
   };
 
-  // Trigger conversion via selected API route
+  // Trigger conversion through a shuffled queue of OCR endpoints with fallback retries.
   const handleRunConversion = async () => {
     if (!imagePreviewUrl) {
       alert('يرجى اختيار أو رفع صورة أولاً.');
@@ -594,31 +594,45 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
     }
 
     setLoading(true);
-    setStatusMessage('جاري إرسال الصورة إلى مسار الـ API واستخراج خطوات المسألة وصندوق الرسم...');
+    setStatusMessage('جاري إرسال الصورة إلى مسارات OCR بالتتابع واستخراج خطوات المسألة وصندوق الرسم...');
 
     try {
       const currentRoute = API_ROUTES.find((r) => r.id === selectedRoute) || API_ROUTES[0];
-      const targetEndpoint = useCustomEndpoint && customEndpointUrl.trim()
-        ? customEndpointUrl.trim()
-        : currentRoute.endpoint;
+      const endpointQueue = useCustomEndpoint && customEndpointUrl.trim()
+        ? [customEndpointUrl.trim()]
+        : [...API_ROUTES].sort(() => Math.random() - 0.5).map((route) => route.endpoint);
+      const promptText = `حلّل صورة المسألة التعليمية المرفقة باللغة العربية. استخرج نص السؤال وخطوات الحل والرسوم إن وجدت، وأعد JSON متوافقاً مع بنية ProblemJSON في هذا التطبيق، مع diagram_box بإحداثيات [ymin, xmin, ymax, xmax] من 0 إلى 1000. لا تضف Markdown أو شروحات خارج JSON.`;
+      const imageResponse = await fetch(imagePreviewUrl);
+      const imageBlob = await imageResponse.blob();
+      let responseJson: any = null;
+      let lastError = 'فشلت جميع مسارات OCR';
 
-      const response = await fetch(targetEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: imagePreviewUrl,
-          subject: currentRoute.subject,
-          mimeType: 'image/png',
-        }),
-      });
+      for (const endpoint of endpointQueue) {
+        try {
+          const formData = new FormData();
+          formData.append('image', imageBlob, 'problem.png');
+          formData.append('prompt', promptText);
 
-      if (!response.ok) {
-        throw new Error(`استجاب مسار الـ API برمز خطأ: ${response.status}`);
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (response.ok) {
+            responseJson = await response.json();
+            break;
+          }
+          lastError = `${endpoint} أعاد رمز الحالة ${response.status}`;
+        } catch (endpointError: any) {
+          lastError = `${endpoint}: ${endpointError?.message || endpointError}`;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
-      const responseJson: any = await response.json();
+      if (!responseJson) {
+        throw new Error(`${lastError}. فشلت جميع مسارات OCR الأربعة.`);
+      }
       
       // Support both { problems: [...] } array and single ProblemJSON
       let problemData: ProblemJSON;
@@ -645,7 +659,7 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
       };
 
       setExtractedProblem(finalProblem);
-      setStatusMessage('تم استخراج ملف الـ JSON وقص الرسم بنجاح! يمكنك مراجعة النتيجة وتطبيقها فوراً على السبورة.');
+      setStatusMessage('تم استخراج ملف JSON وقص الرسم بنجاح عبر مسار OCR متاح! يمكنك مراجعة النتيجة وتطبيقها فوراً على السبورة.');
     } catch (err: any) {
       console.error('Conversion failed:', err);
       setStatusMessage(`حدث خطأ أثناء الاتصال بالـ API: ${err.message || err}.`);

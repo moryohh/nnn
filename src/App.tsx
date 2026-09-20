@@ -274,7 +274,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col justify-between selection:bg-red-100 selection:text-red-800">
+    <div className="min-h-screen bg-[#252525] text-slate-100 flex flex-col justify-between selection:bg-amber-500/30 selection:text-amber-100">
       {/* 1. Gamification Bar (Apples & Hearts & Streak) */}
       <div className="bg-slate-900 text-white sticky top-0 z-40 border-b border-slate-800 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 h-10 flex items-center justify-between text-xs font-bold">
@@ -331,17 +331,17 @@ export default function App() {
       </div>
 
       {/* 2. Header Navigation */}
-      <header className="bg-white border-b border-slate-200 sticky top-10 z-30 shadow-xs">
+      <header className="bg-[#2b2b2b] border-b border-slate-700 sticky top-10 z-30 shadow-lg">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-black text-base shadow-xs">
               <FlaskConical className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="font-black text-slate-900 text-sm md:text-base leading-tight">
+              <h1 className="font-black text-slate-100 text-sm md:text-base leading-tight">
                 السبورة التفاعلية - ورقة الحل المتزامنة
               </h1>
-              <p className="text-[11px] text-slate-500 font-bold hidden sm:block">
+              <p className="text-[11px] text-slate-400 font-bold hidden sm:block">
                 مناهج السادس الإعدادي • التعلم المصغر (Microlearning)
               </p>
             </div>
@@ -374,7 +374,7 @@ export default function App() {
             <button
               id="header-upload-json-btn"
               onClick={() => setIsJsonUploadOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-black text-xs transition active:scale-95 shadow-2xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 font-black text-xs transition active:scale-95 shadow-2xs"
               title="إضافة ملف أو مجلد JSON كامل من جهازك"
             >
               <FolderUp className="w-4 h-4 text-amber-600" />
@@ -384,7 +384,7 @@ export default function App() {
 
             <span
               id="stepProgressIndicator"
-              className="text-xs font-black bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full border border-slate-200 shadow-inner"
+              className="text-xs font-black bg-slate-800 text-slate-200 px-3.5 py-1.5 rounded-full border border-slate-600 shadow-inner"
             >
               الخانات المكتملة {solvedCount} من {totalInputsCount}
             </span>
@@ -418,40 +418,40 @@ export default function App() {
         >
           <div>
             {/* Header with Category and Data */}
-            <div className="border-b-2 border-slate-200 pb-5 mb-6">
+            <div className="border-b-2 border-slate-600 pb-5 mb-6">
               <div className="flex items-center justify-between text-slate-500 font-bold text-xs mb-2 flex-wrap gap-2">
-                <span className="flex items-center gap-2 bg-slate-100 text-slate-700 px-3 py-1 rounded-lg border border-slate-200">
+                <span className="flex items-center gap-2 bg-slate-800 text-slate-200 px-3 py-1 rounded-lg border border-slate-600">
                   <span className="w-2 h-2 rounded-full bg-red-600" />
                   <span id="questionCategory">{problem.category}</span>
                 </span>
 
                 {problem.atomic_weights && (
-                  <span className="bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-black border border-red-200">
+                  <span className="bg-red-500/15 text-red-300 px-3 py-1 rounded-lg text-xs font-black border border-red-500/30">
                     المعطيات: {problem.atomic_weights}
                   </span>
                 )}
               </div>
 
               {/* Question Box */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-center my-3 shadow-2xs">
+              <div className="bg-[#383838] border border-slate-600 rounded-2xl p-5 text-center my-3 shadow-2xs">
                 <h2
                   id="questionTitle"
-                  className="text-base md:text-lg font-black text-slate-900 mb-2 leading-relaxed"
+                  className="text-base md:text-lg font-black text-slate-100 mb-2 leading-relaxed"
                 >
                   {problem.title}
                 </h2>
 
                 {problem.latex_formula && (
-                  <div className="text-xl md:text-2xl font-black text-red-700 py-1 overflow-x-auto">
+                  <div className="text-xl md:text-2xl font-black text-red-300 py-1 overflow-x-auto">
                     <MathView formula={problem.latex_formula} displayMode={true} />
                   </div>
                 )}
 
                 {/* Attached Cropped Diagram if present */}
                 {problem.image_url && (
-                  <div className="mt-4 p-3 bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center shadow-xs">
-                    <div className="w-full flex items-center justify-between text-[11px] font-black text-slate-600 mb-2 px-1">
-                      <span className="flex items-center gap-1.5 text-amber-700 font-black">
+                  <div className="mt-4 p-3 bg-[#292929] rounded-2xl border border-slate-600 flex flex-col items-center justify-center shadow-xs">
+                    <div className="w-full flex items-center justify-between text-[11px] font-black text-slate-300 mb-2 px-1">
+                      <span className="flex items-center gap-1.5 text-amber-300 font-black">
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                         <span>الرسم والمخطط التوضيحي للمسألة:</span>
                       </span>
@@ -464,7 +464,7 @@ export default function App() {
                     <img
                       src={problem.image_url}
                       alt="رسم المسألة التوضيحي"
-                      className="max-h-60 rounded-xl border border-slate-200 bg-white object-contain shadow-xs hover:scale-[1.01] transition-transform"
+                      className="max-h-60 rounded-xl border border-slate-600 bg-white object-contain shadow-xs hover:scale-[1.01] transition-transform"
                     />
                   </div>
                 )}
@@ -514,7 +514,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-3 text-center text-xs text-slate-500 font-bold">
+      <footer className="bg-[#2b2b2b] border-t border-slate-700 py-3 text-center text-xs text-slate-400 font-bold">
         منصة التعلم المصغر التفاعلية لمناهج السادس الإعدادي في العراق • تصميم مهيكل وفق معايير JSON الدقيقة
       </footer>
 
