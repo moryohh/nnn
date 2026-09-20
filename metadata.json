@@ -1,0 +1,6 @@
+{
+  "name": "منصة التعليم التفاعلي - السادس الإعدادي",
+  "description": "منصة تعليمية تفاعلية بنظام التعلم المصغر (Microlearning) لمناهج السادس الإعدادي في العراق لتحويل وحل المسائل العلمية خطوة بخطوة عبر ملفات JSON دقيقة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
