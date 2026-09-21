@@ -75,6 +75,9 @@ const API_ROUTES: ApiRouteOption[] = [
   },
 ];
 
+// Rotate endpoints between requests to distribute traffic evenly.
+let currentApiIndex = 0;
+
 // Sample pre-generated exam test papers with diagrams
 const SAMPLE_TEST_PAPERS = [
   {
@@ -586,7 +589,7 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
     });
   };
 
-  // Trigger conversion through a shuffled queue of OCR endpoints with fallback retries.
+  // Trigger conversion through a rotating queue of OCR endpoints with fallback retries.
   const handleRunConversion = async () => {
     if (!imagePreviewUrl) {
       alert('يرجى اختيار أو رفع صورة أولاً.');
@@ -600,8 +603,21 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
       const currentRoute = API_ROUTES.find((r) => r.id === selectedRoute) || API_ROUTES[0];
       const endpointQueue = useCustomEndpoint && customEndpointUrl.trim()
         ? [customEndpointUrl.trim()]
-        : [...API_ROUTES].sort(() => Math.random() - 0.5).map((route) => route.endpoint);
-      const promptText = `حلّل صورة المسألة التعليمية المرفقة باللغة العربية. استخرج نص السؤال وخطوات الحل والرسوم إن وجدت، وأعد JSON متوافقاً مع بنية ProblemJSON في هذا التطبيق، مع diagram_box بإحداثيات [ymin, xmin, ymax, xmax] من 0 إلى 1000. لا تضف Markdown أو شروحات خارج JSON.`;
+        : Array.from({ length: API_ROUTES.length }, (_, offset) => (
+            API_ROUTES[(currentApiIndex + offset) % API_ROUTES.length].endpoint
+          ));
+      if (!useCustomEndpoint) {
+        currentApiIndex = (currentApiIndex + 1) % API_ROUTES.length;
+      }
+      const promptText = `حلّل صورة المسألة التعليمية المرفقة باللغة العربية. استخرج نص السؤال وخطوات الحل، وأعد JSON متوافقاً مع بنية ProblemJSON في هذا التطبيق. طبّق قواعد الرسم التالية بحزم شديدة:
+
+1. يُحظر منعاً باتاً تضمين أي كلمات أو أحرف أو أرقام عربية أو إنجليزية تقع فوق الرسم أو تحته داخل diagram_box.
+2. يجب أن يبدأ diagram_box من الحافة الخارجية للخط الهندسي الأول للرسم، مثل رأس المثلث أو زاوية المربع، وينتهي عند آخر خط هندسي للرسم.
+3. إذا وُجد رسمان بجانب بعضهما، مثل مثلث ومربع، فاجعل لكل شكل diagram_box منفصلاً ودقيقاً إن كانت بنية JSON تسمح بذلك، أو اختر الرسم الهندسي الأساسي فقط دون النصوص المحيطة.
+4. ركّز بصرياً على الخطوط والأشكال الهندسية فقط، وتجاهل عناوين الرسم والشرح والأرقام والوحدات.
+5. أعد diagram_box بإحداثيات [ymin, xmin, ymax, xmax] من 0 إلى 1000، واحرص على ألا يتضمن مساحة النص أعلى الرسم أو أسفله.
+
+لا تضف Markdown أو شروحات خارج JSON.`;
       const imageResponse = await fetch(imagePreviewUrl);
       const imageBlob = await imageResponse.blob();
       let responseJson: any = null;
