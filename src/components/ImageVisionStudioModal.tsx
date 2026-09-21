@@ -589,6 +589,31 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
     });
   };
 
+  const compressImageForOcr = (imageUrl: string): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        const maxDimension = 1800;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        if (!context) {
+          reject(new Error('تعذر تجهيز الصورة للمعالجة.'));
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('تعذر ضغط الصورة.'));
+        }, 'image/jpeg', 0.82);
+      };
+      image.onerror = () => reject(new Error('تعذر قراءة الصورة المرفوعة.'));
+      image.src = imageUrl;
+    });
+  };
+
   // Trigger conversion through a rotating queue of OCR endpoints with fallback retries.
   const handleRunConversion = async () => {
     if (!imagePreviewUrl) {
@@ -618,21 +643,24 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
 5. أعد diagram_box بإحداثيات [ymin, xmin, ymax, xmax] من 0 إلى 1000، واحرص على ألا يتضمن مساحة النص أعلى الرسم أو أسفله.
 
 لا تضف Markdown أو شروحات خارج JSON.`;
-      const imageResponse = await fetch(imagePreviewUrl);
-      const imageBlob = await imageResponse.blob();
+      const imageBlob = await compressImageForOcr(imagePreviewUrl);
       let responseJson: any = null;
       let lastError = 'فشلت جميع مسارات OCR';
 
       for (const endpoint of endpointQueue) {
         try {
           const formData = new FormData();
-          formData.append('image', imageBlob, 'problem.png');
+          formData.append('image', imageBlob, 'problem.jpg');
           formData.append('prompt', promptText);
 
+          const controller = new AbortController();
+          const timeoutId = window.setTimeout(() => controller.abort(), 28000);
           const response = await fetch(endpoint, {
             method: 'POST',
             body: formData,
+            signal: controller.signal,
           });
+          window.clearTimeout(timeoutId);
 
           if (response.ok) {
             responseJson = await response.json();
@@ -640,7 +668,10 @@ export const ImageVisionStudioModal: React.FC<ImageVisionStudioModalProps> = ({
           }
           lastError = `${endpoint} أعاد رمز الحالة ${response.status}`;
         } catch (endpointError: any) {
-          lastError = `${endpoint}: ${endpointError?.message || endpointError}`;
+          const reason = endpointError?.name === 'AbortError'
+            ? 'انتهت مهلة المعالجة (28 ثانية)'
+            : endpointError?.message || endpointError;
+          lastError = `${endpoint}: ${reason}`;
         }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
